@@ -3,6 +3,7 @@ package net.rbbs1.yutori.yutoriboard
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
+import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -10,10 +11,10 @@ import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(){
     var mRecyclerView: RecyclerView? = null
-    var mAdapter: RecyclerView.Adapter<*>? = null
     var mLayoutManager: RecyclerView.LayoutManager? = null
+    var mSwipeRefreshLayout: SwipeRefreshLayout? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,7 +29,8 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        this.mRecyclerView = findViewById(R.id.threadList) as RecyclerView?
+        this.mRecyclerView = findViewById(R.id.threadList) as RecyclerView
+        this.mSwipeRefreshLayout = findViewById(R.id.swipe_refresh) as SwipeRefreshLayout
 
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
@@ -36,14 +38,20 @@ class MainActivity : AppCompatActivity() {
 
         // use a linear layout manager
         this.mLayoutManager = LinearLayoutManager(this);
-        this.mRecyclerView?.setLayoutManager(this.mLayoutManager);
+        this.mRecyclerView?.setLayoutManager(this.mLayoutManager)
 
-        val myDataset = listOf("a", "b", "c")
+        // Listenerをセット
+        if (mRecyclerView != null){
+            mSwipeRefreshLayout?.setOnRefreshListener(
+                    SwipeRefreshLayout.OnRefreshListener{
+                        Threads(this.mRecyclerView!!, mSwipeRefreshLayout).execute(Threads.url().string())
+                    }
+            )
+        }
 
-        // specify an adapter (see also next example)
-        this.mAdapter = MyAdapter(myDataset);
-        this.mRecyclerView?.setAdapter(this.mAdapter);
-
+        if (mRecyclerView != null) {
+            Threads(this.mRecyclerView!!, mSwipeRefreshLayout).execute(Threads.url().string())
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
