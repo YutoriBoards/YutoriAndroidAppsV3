@@ -10,7 +10,7 @@ import com.beust.klaxon.JsonObject
 import java.text.DateFormat
 import java.util.*
 
-class ThreadAdapter(val items: List<JsonObject>) :
+class ThreadAdapter(val items: List<Thread>) :
         RecyclerView.Adapter<ThreadAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -19,7 +19,7 @@ class ThreadAdapter(val items: List<JsonObject>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.setUp(Thread(items[position]))
+        holder.setUp(items[position])
     }
 
     override fun getItemCount(): Int {

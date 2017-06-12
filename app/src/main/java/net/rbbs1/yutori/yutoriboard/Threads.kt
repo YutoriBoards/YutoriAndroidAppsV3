@@ -16,15 +16,16 @@ import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
 
 
-class Threads (mRecyclerView: RecyclerView, mSwipeRefreshLayout: SwipeRefreshLayout?) : AsyncTask<String, Void, JsonObject>() {
-    var mRecyclerView: RecyclerView = mRecyclerView
-    var mSwipeRefreshLayout: SwipeRefreshLayout? = mSwipeRefreshLayout
+class Threads (mRecyclerView: RecyclerView, mSwipeRefreshLayout: SwipeRefreshLayout, threads:MutableList<Thread>) : AsyncTask<String, Void, JsonObject>() {
+    val mRecyclerView: RecyclerView = mRecyclerView
+    val mSwipeRefreshLayout: SwipeRefreshLayout = mSwipeRefreshLayout
+    val threads:MutableList<Thread> = threads
 
     class url(page: Int = 1, k: Int = 20, type: String = "") {
         var url : String? = null
 
         init {
-            val point = "http://yutori.rbbs1.net/apps/v2/api/get/thread_list/"
+            val point = BuildConfig.YUTORI_THREAD_LIST
             val app_token = ""
             val token = ""
             var url = ""
@@ -50,11 +51,12 @@ class Threads (mRecyclerView: RecyclerView, mSwipeRefreshLayout: SwipeRefreshLay
         }
     }
 
+    override fun onPreExecute() {
+        mSwipeRefreshLayout.setRefreshing(true)
+    }
+
     override fun doInBackground(vararg params: String): JsonObject? {
         var obj: JsonObject? = null
-
-        mSwipeRefreshLayout?.setRefreshing(true)
-
 
         // リクエストオブジェクトを作って
         val request = Request.Builder()
@@ -79,10 +81,22 @@ class Threads (mRecyclerView: RecyclerView, mSwipeRefreshLayout: SwipeRefreshLay
     }
 
     override fun onPostExecute(obj: JsonObject?) {
-        if (obj != null && mRecyclerView != null){
-            this.mRecyclerView.setAdapter(ThreadAdapter(obj["List"] as JsonArray<JsonObject>))
+        val items:MutableList<Thread> = mutableListOf()
+        if (obj != null){
+            if (obj["List"] != null) {
+                for (item in obj["List"] as JsonArray<JsonObject>) {
+                    val thread = Thread(item)
+                    items.add(thread)
+                }
+            }
+            threads.addAll(items)
+            if (this.mRecyclerView.adapter == null) {
+                this.mRecyclerView.setAdapter(ThreadAdapter(threads))
+            } else {
+                this.mRecyclerView.adapter.notifyDataSetChanged()
+            }
         }
-        mSwipeRefreshLayout?.setRefreshing(false)
+        mSwipeRefreshLayout.setRefreshing(false)
     }
 
 }

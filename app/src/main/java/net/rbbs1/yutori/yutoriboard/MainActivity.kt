@@ -10,11 +10,16 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
+import android.support.v7.widget.GridLayoutManager
+
+
 
 class MainActivity : AppCompatActivity(){
     var mRecyclerView: RecyclerView? = null
     var mLayoutManager: RecyclerView.LayoutManager? = null
     var mSwipeRefreshLayout: SwipeRefreshLayout? = null
+    var page = 0
+    var threads: MutableList<Thread> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,21 +41,41 @@ class MainActivity : AppCompatActivity(){
         // in content do not change the layout size of the RecyclerView
         this.mRecyclerView?.setHasFixedSize(true);
 
-        // use a linear layout manager
-        this.mLayoutManager = LinearLayoutManager(this);
-        this.mRecyclerView?.setLayoutManager(this.mLayoutManager)
 
         // Listenerをセット
-        if (mRecyclerView != null){
-            mSwipeRefreshLayout?.setOnRefreshListener(
-                    SwipeRefreshLayout.OnRefreshListener{
-                        Threads(this.mRecyclerView!!, mSwipeRefreshLayout).execute(Threads.url().string())
-                    }
-            )
-        }
+        if (mRecyclerView != null && mSwipeRefreshLayout != null){
+            // use a linear layout manager
+            this.mLayoutManager = LinearLayoutManager(this);
+            this.mRecyclerView!!.setLayoutManager(this.mLayoutManager)
 
-        if (mRecyclerView != null) {
-            Threads(this.mRecyclerView!!, mSwipeRefreshLayout).execute(Threads.url().string())
+            mSwipeRefreshLayout?.setOnRefreshListener {
+                Threads(this.mRecyclerView!!, mSwipeRefreshLayout!!, threads).execute(Threads.url().string())
+            }
+
+
+            mRecyclerView!!.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    val totalCount = recyclerView!!.adapter.itemCount
+                    val childCount = recyclerView.childCount
+                    val layoutManager = recyclerView.layoutManager
+
+                    if (layoutManager is LinearLayoutManager) { // LinearLayoutManager
+                        val firstPosition = layoutManager.findFirstVisibleItemPosition() // RecyclerViewの一番上に表示されているアイテムのポジション
+                        if (totalCount == childCount + firstPosition) {
+                            // ページング処理
+                            // LinearLayoutManagerを指定している時のページング処理
+                            if (mSwipeRefreshLayout != null && !mSwipeRefreshLayout!!.isRefreshing) {
+                                Threads(mRecyclerView!!, mSwipeRefreshLayout!!, threads).execute(Threads.url(page = page + 1).string())
+                                page++
+                            }
+                        }
+                    }
+                }
+            })
+            Threads(this.mRecyclerView!!, mSwipeRefreshLayout!!, threads).execute(Threads.url().string())
+            page = 1
         }
     }
 
